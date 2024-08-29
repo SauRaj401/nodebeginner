@@ -65,22 +65,72 @@
 
 
 // (same) workign with the route , request handlers and the server
+// var http = require('http');
+// var url = require('url');
+
+// function start(route, handle) {
+//   function onRequest(request, response) {
+//     var pathname = url.parse(request.url).pathname;
+//     console.log('Request for ' + pathname + ' received.');
+
+  
+
+//     response.writeHead(200, { 'Content-Type': 'text/plain' });
+
+//     var content = route(handle, pathname);
+//     response.write(content);
+    
+//     response.end();
+//   }
+
+//   http.createServer(onRequest).listen(8000);
+//   console.log('Server has started.');
+// }
+
+// exports.start = start;
+
+
+//before the approach was request handelr -> router -> server
+//new appraoch is instead of bring the content to the server, we will bring the server to the content.
+
+// var http = require('http');
+// var url = require('url');
+
+// function start(route, handle) {
+//   function onRequest(request, response) {
+//     var pathname = url.parse(request.url).pathname;
+//     console.log('Request for ' + pathname + ' received.');
+
+//     route(handle, pathname, response);
+//   }
+
+//   http.createServer(onRequest).listen(8000);
+//   console.log('Server has started.');
+// }
+
+// exports.start = start;
+
+
+//working wit POST data and need to parse the data that is sent to the server
 var http = require('http');
 var url = require('url');
 
 function start(route, handle) {
   function onRequest(request, response) {
+    var postData = '';
     var pathname = url.parse(request.url).pathname;
     console.log('Request for ' + pathname + ' received.');
 
-  
+    request.setEncoding('utf8');
 
-    response.writeHead(200, { 'Content-Type': 'text/plain' });
+    request.addListener('data', function(postDataChunk) {
+      postData += postDataChunk;
+      console.log('Received POST data chunk ' + postDataChunk + '.');
+    });
 
-    var content = route(handle, pathname);
-    response.write(content);
-    
-    response.end();
+    request.addListener('end', function() {
+      route(handle, pathname, response, postData);
+    });
   }
 
   http.createServer(onRequest).listen(8000);
@@ -89,3 +139,7 @@ function start(route, handle) {
 
 exports.start = start;
 
+//in the above code we have did three things:
+//1. We set the encoding of the received data to UTF-8.
+//2. We listened to the 'data' event, accumulating all the received data to the postData variable.
+//3. We listened to the 'end' event, so that when all the data has been received, we call the route() function, passing both the handle and the postData to it.
